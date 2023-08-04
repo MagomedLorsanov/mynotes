@@ -14,7 +14,7 @@ class NoteController extends Controller
         $this->noteModel = new Note('notes');
     }
 
-    public function home()
+    public function index()
     {
         $notes = $this->noteModel->all();
         $this->view('index', $notes);

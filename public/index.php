@@ -2,5 +2,8 @@
 
 
 require_once  '../vendor/autoload.php';
-require_once '../App/bootlaoader.php';
 
+use App\Core\Kernel;
+
+$kernel = new Kernel;
+require_once  '../app/Views/note/index.php';
