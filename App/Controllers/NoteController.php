@@ -23,7 +23,7 @@ class NoteController extends Controller
 
         $notesCount = count($all);
         $totalPages = ceil($notesCount / $this->notePerPage);
-     
+
         $this->makeNotePager($notesCount, $totalPages);
 
         $pagination = $this->utils->drawPager($notesCount, $this->notePerPage);
@@ -36,12 +36,17 @@ class NoteController extends Controller
 
     public function store()
     {
-        $note = $this->noteModel;
-        $note->title = trim($_POST['title']);
-        $note->content = trim($_POST['content']); 
-        $note->created_at = date('Y-m-d H:i:s');
+        if (isset($_POST['title']) && isset($_POST['content'])) {
+            $note = $this->noteModel;
+            $note->title = trim($_POST['title']);
+            $note->content = trim($_POST['content']);
+            $note->created_at = date('Y-m-d H:i:s');
 
-        $note->save();
+            $note->save();
+        } else {
+            $note->title = 'Please enter a valid title';
+            $note->content = 'Please enter a valid content';
+        }
         echo json_encode($note);
         exit();
     }
@@ -61,16 +66,23 @@ class NoteController extends Controller
 
     public function update($id)
     {
-        $note = $this->noteModel;
-        $note->id = trim($_POST['id']);
-        $note->title = trim($_POST['title']);
-        $note->content = trim($_POST['content']); 
-        unset($note->created_at);
+        if (isset($_POST['title']) && isset($_POST['content'])) {
+            $note = $this->noteModel;
+            $note->id = trim($_POST['id']);
+            $note->title = trim($_POST['title']);
+            $note->content = trim($_POST['content']);
+            unset($note->created_at);
 
-        $note->save();
+            $note->save();
+        } else {
+            if (isset($_POST['title'])) {
+                $note->title = 'Please enter a valid title';
+            } else if (isset($_POST['content'])) {
+                $note->content = 'Please enter a valid content';
+            }
+        }
         echo json_encode($note);
         exit();
-       
     }
 
     public function delete($id)
@@ -80,16 +92,17 @@ class NoteController extends Controller
         exit();
     }
 
-    public function makeNotePager($notesCount, $totalPages) {
-        if(!isset($_GET['page']) || (int)($_GET['page']) == 0 || (int)($_GET['page']) == 1 || (int)($_GET['page']) < 0) {
+    public function makeNotePager($notesCount, $totalPages)
+    {
+        if (!isset($_GET['page']) || (int)($_GET['page']) == 0 || (int)($_GET['page']) == 1 || (int)($_GET['page']) < 0) {
             $pageNumber = 1;
             $leftLimit = 0;
             $rightLimit = $this->notePerPage;
-        }elseif((int)($_GET['page']) >= $totalPages) {
+        } elseif ((int)($_GET['page']) >= $totalPages) {
             $pageNumber = $totalPages;
             $leftLimit = $this->notePerPage * ($pageNumber - 1);
             $rightLimit = $notesCount;
-        }else {
+        } else {
             $pageNumber = (int)$_GET['page'];
             $leftLimit = $this->notePerPage * ($pageNumber - 1);
             $rightLimit = $this->notePerPage;
