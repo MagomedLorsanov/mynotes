@@ -1,115 +1,96 @@
 <?php
 
-namespace app\Controllers;
+namespace App\Controllers;
 
-use App\Models\Note;
 use App\Core\Controller;
+use App\Models\Note;
+use App\Utils\Utils;
 
 class NoteController extends Controller
 {
     protected $noteModel = '';
+    protected $notePerPage = 10;
 
     public function __construct()
     {
-        $this->noteModel = new Note('notes');
+        $this->noteModel = new Note();
+        $this->utils = new Utils();
     }
 
     public function index()
     {
-        $notes = $this->noteModel->all();
-        $this->view('index', $notes);
+        $all = $this->noteModel->all();
+
+        $notesCount = count($all);
+        $totalPages = ceil($notesCount / $this->notePerPage);
+        $this->makeNotePager($notesCount, $totalPages);
+        $pagination = $this->utils->drawPager($notesCount, $totalPages);
+        $this->$data['pagination'] = $pagination;
+        $this->$data['notes'] = $all;
+
+        $this->view('index', $this->$data);
     }
 
     public function store()
     {
+        $note = $this->noteModel;
+        $note->title = trim($_POST['title']);
+        $note->content = trim($_POST['content']); 
+        $note->created_at = date('Y-m-d H:i:s');
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-            $note = [
-                'title' => trim($_POST['title']),
-                'content' => trim($_POST['content']),
-
-                'title_err' => '',
-                'content_err' => ''
-            ];
-
-            if (empty($note['title'])) {
-                $note['title_err'] = 'Please enter a title';
-            }
-
-            if (empty($note['content'])) {
-                $note['content_err'] = 'Please enter a content';
-            }
-
-            $created_at = date('Y-m-d H:i:s');
-            $note['created_at'] = $created_at;
-            if (empty($note['title_err']) && empty($note['content_err'])) {
-                $aa = $this->noteModel->add($note['title'], $note['content'], $note['created_at']);
-                $note['id'] = $aa;
-            }
-        } else {
-            $note = [
-                'title' => '',
-                'content' => '',
-
-                'title_err' => '',
-                'content_err' => ''
-            ];
-        }
+        $note->save();
         echo json_encode($note);
         exit();
     }
 
     public function show($id)
     {
-        $data = $this->noteModel->show($id);
-        $note = [
-            'id' => $data['id'],
-            'title' => $data['title'],
-            'content' => $data['content'],
-            'created_at' => $data['created_at']
-        ];
-        $this->view('show', $note);
+        $data = $this->noteModel->findById($id);
+        $this->view('show', $data);
     }
 
     public function find($id)
     {
-        $data = $this->noteModel->show($id);
-        $note = [
-            'id' => $data['id'],
-            'title' => $data['title'],
-            'content' => $data['content'],
-            'method' => 'PUT'
-        ];
-        echo json_encode($note);
+        $data = $this->noteModel->findById($id);
+        echo json_encode($data);
         exit();
     }
 
     public function update($id)
     {
-        $note = [];
-        echo '<pre>';
-        var_dump($_POST);
-        echo '</pre>';
-        if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-            if (!empty($_POST['title'])) {
-                $note['title'] = trim($_POST['title']);
-            }
-
-            if (!empty($_POST['content'])) {
-                $note['content'] = trim($_POST['content']);
-            }
-
-            $this->noteModel->update($note['title'], $note['content'], $id);
-        }
-
+        $note = $this->noteModel;
+        $note->id = trim($_POST['id']);
+        $note->title = trim($_POST['title']);
+        $note->content = trim($_POST['content']); 
+        unset($note->created_at);
+        
+        $note->save();
         echo json_encode($note);
         exit();
+       
     }
 
     public function delete($id)
     {
         $this->noteModel->delete($id);
-        $this->view('index');
+        echo $id;
+        exit();
+    }
+
+    public function makeNotePager($notesCount, $totalPages) {
+        if(!isset($_GET['page']) || (int)($_GET['page']) <= 1) {
+            $pageNumber = 1;
+            $leftLimit = 0;
+            $rightLimit = $this->notePerPage;
+        }elseif((int)($_GET['page']) >= $totalPages) {
+            $rightLimit =$totalPages;
+            $leftLimit = $this->notePerPage * ($pageNumber - 1);
+            $rightLimit = $notesCount;
+        }else {
+            $pageNumber = (int)$_GET['page'];
+            $leftLimit = $this->notePerPage * ($pageNumber - 1);
+            $rightLimit = $this->notePerPage;
+        }
+        $this->$data['notesOnPage'] = $this->noteModel->getLimitedNotes($leftLimit, $rightLimit);
     }
 }

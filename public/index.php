@@ -1,9 +1,4 @@
 <?php
-
-
-require_once  '../vendor/autoload.php';
-
-use App\Core\Kernel;
-
-$kernel = new Kernel;
-require_once  '../app/Views/note/index.php';
+require_once __DIR__ . '/../autoload.php';
+$route = new \App\Core\Router;
+?>

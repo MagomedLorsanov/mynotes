@@ -1,34 +1,49 @@
 <?php
-namespace App\config;
-use PDO;
-require_once __DIR__ .'./config.php';
+
+namespace App\Config;
+
+use App\Config;
+
 class Database
 {
-    private $host = DB_HOST;
-    private $username = DB_USER;
-    private $dbname = DB_NAME;
-    private $password = DB_PASSWORD;
-
-
-    public function  __construct()
+    protected $dbh;
+    public function __construct()
     {
+        $config = new Config();
+        $dns = $config->data['db']['driver'] . ':dbname=' . $config->data['db']['dbname'] . ';host=' . $config->data['db']['host'];
+        try {
+            $this->dbh = new \PDO($dns, $config->data['db']['user'], $config->data['db']['password']);
+        } catch (\PDOException $e) {
+            throw new DbException('Ошибка соединения с БД');
+        }
     }
 
-    protected function connect()
+    public function execute(string $sql, array $data = [])
     {
-        $options = array(
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        );
-
-        try {
-            $dsn = "mysql:host=$this->host; dbname=$this->dbname";
-            $pdo  = new PDO($dsn, $this->username, $this->password, $options);
-            // $pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
-            // $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            return $pdo;
-        } catch (PDOException $error) {
-           die('Connection failed: ' . $error->getMessage());
+        $sth = $this->dbh->prepare($sql);
+        $result = $sth->execute($data);
+        if (false === $result) {
+            throw new DbException('Ошибка запроса к БД');
         }
+        return true;
+    }
+
+    public function query(string $sql, array $data = [], $class = null)
+    {
+        $sth = $this->dbh->prepare($sql);
+        $result = $sth->execute($data);
+        if (false === $result) {
+            throw new DbException('Ошибка запроса к БД');
+        }
+        if (null === $class) {
+            return $sth->fetchAll();
+        } else {
+            return $sth->fetchAll(\PDO::FETCH_CLASS, $class);
+        }
+    }
+
+    public function lastInsertId()
+    {
+        return $this->dbh->lastInsertId();
     }
 }
