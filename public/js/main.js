@@ -15,4 +15,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
       updateBtn.dataset.id
     );
   });
+
+  var btns = document.getElementsByClassName(".page-item");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener("click", () => {
+    btns[i].classList.remove("active");
+    });
+  }
 });

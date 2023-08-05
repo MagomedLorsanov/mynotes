@@ -23,8 +23,11 @@ class NoteController extends Controller
 
         $notesCount = count($all);
         $totalPages = ceil($notesCount / $this->notePerPage);
+     
         $this->makeNotePager($notesCount, $totalPages);
-        $pagination = $this->utils->drawPager($notesCount, $totalPages);
+
+        $pagination = $this->utils->drawPager($notesCount, $this->notePerPage);
+
         $this->$data['pagination'] = $pagination;
         $this->$data['notes'] = $all;
 
@@ -63,7 +66,7 @@ class NoteController extends Controller
         $note->title = trim($_POST['title']);
         $note->content = trim($_POST['content']); 
         unset($note->created_at);
-        
+
         $note->save();
         echo json_encode($note);
         exit();
@@ -78,12 +81,12 @@ class NoteController extends Controller
     }
 
     public function makeNotePager($notesCount, $totalPages) {
-        if(!isset($_GET['page']) || (int)($_GET['page']) <= 1) {
+        if(!isset($_GET['page']) || (int)($_GET['page']) == 0 || (int)($_GET['page']) == 1 || (int)($_GET['page']) < 0) {
             $pageNumber = 1;
             $leftLimit = 0;
             $rightLimit = $this->notePerPage;
         }elseif((int)($_GET['page']) >= $totalPages) {
-            $rightLimit =$totalPages;
+            $pageNumber = $totalPages;
             $leftLimit = $this->notePerPage * ($pageNumber - 1);
             $rightLimit = $notesCount;
         }else {
