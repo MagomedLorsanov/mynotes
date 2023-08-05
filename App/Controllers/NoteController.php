@@ -20,14 +20,11 @@ class NoteController extends Controller
     public function index()
     {
         $all = $this->noteModel->all();
-
         $notesCount = count($all);
         $totalPages = ceil($notesCount / $this->notePerPage);
-
         $this->makeNotePager($notesCount, $totalPages);
-
         $pagination = $this->utils->drawPager($notesCount, $this->notePerPage);
-
+       
         $this->$data['pagination'] = $pagination;
         $this->$data['notes'] = $all;
 
@@ -75,9 +72,9 @@ class NoteController extends Controller
 
             $note->save();
         } else {
-            if (isset($_POST['title'])) {
+            if (!isset($_POST['title'])) {
                 $note->title = 'Please enter a valid title';
-            } else if (isset($_POST['content'])) {
+            } else if (!isset($_POST['content'])) {
                 $note->content = 'Please enter a valid content';
             }
         }
